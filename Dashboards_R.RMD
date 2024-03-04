@@ -1,0 +1,490 @@
+---
+title: "The Great Recession 2007-2009"
+author: "MuddalakshmiVenkataPrudhvi"
+date: "`r Sys.Date()`"
+
+runtime: shiny
+
+output: 
+  flexdashboard::flex_dashboard:
+      vertical_layout: fill
+---
+
+```{r Libraries, include=FALSE, message=FALSE}
+if (!require("tidyverse")) install.packages("tidyverse")
+library(tidyverse)
+
+if (!require("DT")) install.packages("DT")
+library(DT)
+
+if (!require("Hmisc")) install.packages("Hmisc")
+library(Hmisc)
+
+if (!require("lubridate")) install.packages("lubridate")
+library(lubridate)
+
+if (!require("plotly")) install.packages("plotly")
+library(plotly)
+
+if (!require("gridExtra")) install.packages("gridExtra")
+library(gridExtra)
+
+if (!require("maps")) install.packages("maps")
+library(maps)
+
+if (!require("shiny")) install.packages("shiny")
+library(shiny)
+
+if (!require("shinydashboard")) install.packages("shinydashboard")
+library(shinydashboard)
+
+if (!require("ggridges")) install.packages("ggridges")
+library(ggridges)
+
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+
+library(DT)
+
+#install.packages("ggridges")
+#library(ggridges)
+
+#library(ggplot2)
+
+```
+
+```{r Global knitr Setup, include=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+
+knitr::opts_chunk$set(
+	#Chunk Code Options
+	echo = FALSE, # Show the code in the output
+	include = TRUE, # Show the results in the output.
+	
+	message = FALSE, # messages generated from code are not shown.
+	warning = FALSE, # warnings generated from code are not shown.
+	
+	results = 'asis', # no additional formatting is applied to the results
+	comment = NA, 
+	
+	# don't add the prompt character in R Code, i.e., 
+	# don't stop to ask the user for execution
+	prompt = FALSE, 	
+	
+	# # Plot Options - set the width and height (in inches) of all plots generated.
+	# fig.height = 6,
+	# fig.width = 8,
+	# 
+	# fig.retina only applies to html output 
+	# controls the quality (dpi) of the image.
+	fig.retina = 2,
+	
+	# default alignment of all figures.
+	fig.align = 'center'
+)
+
+# round all decimals to 4 digits (after the decimal),
+# unless specified otherwise in the local options. 
+options(digits = 4)
+
+```
+
+```{r load data, include = FALSE, echo=FALSE}
+
+getwd()
+
+setwd("/Users/prudhvi/Desktop/R DATA/R assignment")
+
+load("Snap_Benefits.RMD.RData")
+load("UnemploymentRate.RData")
+load("PovertyRate.RData")
+load("Personal_Income_rates.RData")
+load("TotalGDP_rates.RData")
+load("Wage_rate.RData")
+load("Imp_Exp_Farmtaxes.RData")
+load("Income_of_Farm.RData")
+load("Agriculture_Loans.RData")
+load("Cost_Labor.RData")
+load("Personal_Expenditure.RData")
+load("Rental_Vacancy_Rates.RData")
+load("Mortgage_Value.RData")
+load("Housing_Inventory_data.RData")
+load("Zillow_homes.RData")
+```
+
+# Agriculture Sector
+
+####  
+<h2>Agriculture Sector</h2>
+Add your analysis / findings / Annotations here.
+
+## Column{data-width=200}
+### Select States, Period and Year
+
+```{r SelectState}
+
+selectInput(
+	inputId = "StateSelected1",
+	label = "Please select the state",
+	choices = 
+		 Income_Farm%>% 
+		select(State) %>% 
+		unique()
+)
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+### Farm Income
+```{r}
+
+Income_Farm %>%
+ # filter(State==input$StateSelected1 ) %>%
+  gather(-Farm_Income, -State, -Period, key = "var", value = "Year") %>% 
+  ggplot(aes(x =  Year, y = Farm_Income, color = Period, shape = factor(Period))) +
+    geom_point() +
+    facet_wrap(~ State, scales = "free") +
+    theme_bw()+
+  labs(
+      x= "Year",
+      y = "Farm Income in Dollars ")
+
+```
+
+
+### Labor Cost for Agriculture Manufacturing
+```{r}
+renderPlotly({
+
+cost <- Labor_Cost %>%
+  #filter(variable==input$Labor_Cost) %>%
+  ggplot( aes(x=Year, y=Labour_cost_share_for_manufacturing, fill=Period))+
+   geom_bar(stat="identity", position="dodge") +
+  	labs(
+      x= "observation_date",
+      y = "Agriculture manufacturing cost ")
+  
+  
+ggplotly(cost)
+
+})
+
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Loans to financial Agriculure Production
+```{r}
+Agriculture_L %>%
+  ggplot(aes(x = (Year), y = Loans_to_Finance_Agricultural_Production, fill=Loans_to_Finance_Agricultural_Production)) +
+  geom_point(aes(colour = Period)) +
+  geom_smooth(se = TRUE) +
+  theme_bw()+
+  	labs(
+      x= "Year",
+      y = "Financial Loan Cost in Dollars")
+
+```
+
+
+### Tax on Farm Imports and Production
+```{r}
+renderPlot({
+	Farm_tax_Imp %>%
+	ggplot(aes(x=observation_date, y = `Farm_outputs_Taxes_on_production_and_Imports`))+
+	geom_col(aes(fill=`Period`) , alpha=0.6, position = "dodge")+
+	geom_path(size=2)+
+	geom_point(size=5)+
+	geom_smooth(alpha=0.4)+
+	geom_line(
+		aes( group = `Period`),
+		arrow=arrow(ends = "both", type = "closed"))+
+	scale_fill_brewer(palette="Paired")+
+	labs(
+      x= "observation_date",
+      y = "Taxes on Imports and Exports")+
+	theme(
+		plot.title =
+			element_text(margin = margin(t = 10, b = 10), size=18),
+		legend.position = 'top'
+		)
+
+})
+
+```
+
+# Housing Value Index
+
+
+####  {}
+<h2>Housing Value Index</h2>
+Add your analysis / findings / Annotations here.
+
+## Column{data-width=200}
+### Select States, Period and Year
+
+```{r SelectState1}
+
+selectInput(
+	inputId = "StateSelected2",
+	label = "Please select the state",
+	choices = 
+		 Zillow_homes %>% 
+		select(State) %>% 
+		unique()
+)
+
+```
+
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+### Zillow home value
+
+```{r}
+Zillow_homes %>%
+plot_ly(x = ~Year, 
+           y= ~Home_Value_Index,
+           #  text = paste("Year:", HouseHoldIncome$Year, "Price:",HouseHoldIncome$HouseholdIncomePercent,"Year:", HouseHoldIncome$Period),
+             split = (~State),
+             type = "scatter",
+             mode = "bar") %>%
+  add_annotations(
+    x= Zillow_homes$Year[which.max(Zillow_homes$Home_Value_Index)],
+    y= Zillow_homes$Home_Value_Index[which.max(Zillow_homes$Home_Value_Index)],
+    text= "Highest Rate"
+  )  %>%
+  add_annotations(
+    x= Zillow_homes$Year[which.min(Zillow_homes$Home_Value_Index)],
+    y= Zillow_homes$Home_Value_Index[which.min(Zillow_homes$Home_Value_Index)],
+    text= "Lowest Rate"
+  ) %>% layout(title= "Home value Index", font = list(family = 'Arial',size = 8,color = 'rgba(67,67,67,1)'))
+
+```
+
+### Housing Inventory
+```{r}
+Housing_In <- ggplot(Housing_In, aes(x = Year, y = Housing_Inventory, color = State)) + geom_point(aes(shape = Period,size = Housing_Inventory,frame = Period))
+ggplotly(Housing_In)
+
+```
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Rental value rate
+```{r}
+Rental_Value %>% 
+  ggplot(aes(x=Year,y=Rental_Vacancy_rate)) +
+  geom_point(alpha=0.5, aes(color=Period,size=0.3)) + 
+  labs(x="Year", y= "Rental_Vacancy_rate",
+       title="Rental Homes") +
+  scale_y_log10()+
+  scale_x_log10()+
+  geom_smooth(method=lm,se=FALSE)+
+  facet_wrap(~State) +
+  
+  labs(
+      x= "Year",
+      y = " Rental Vacany Rates in 5 states ")
+
+```
+
+
+### Mortage Value
+```{r}
+ggplot(Mortgage_US, aes(x = Year, y = MORTGAGE30US)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "red")+
+  facet_wrap(~Period) +
+labs(
+      x= "Year",
+      y = "Mortage Value During the Periods ")
+
+```
+
+# Poverty at a glace
+
+
+####  {}
+<h2>Poverty at a glace</h2>
+Add your analysis / findings / Annotations here.
+
+## Column{data-width=200}
+### Select States, Period and Year
+
+```{r SelectState2}
+
+selectInput(
+	inputId = "StateSelected3",
+	label = "Please select the state",
+	choices = 
+		 TotalWagerate %>% 
+		select(State) %>% 
+		unique()
+)
+
+```
+
+
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+### Unemployment rate
+```{r}
+ggplot(data = Unemployment_totalRate, aes(x = Year, y = Unemployment)) + 
+  geom_point() + 
+  theme(plot.background = element_rect(color = "black", # Border color , #State color
+                                       size = 1)) +
+  facet_grid(State~Period) +
+  
+labs(
+      x= "Year",
+      y = "Unemployment Rate ")
+```
+
+
+
+
+### Wage rate
+```{r}
+
+ggplot(TotalWagerate, aes(x = Year, fill = Period)) +
+  geom_density(alpha = 0.5) +
+  labs(fill = "Period")+
+  facet_grid('State') +
+  labs(
+      x= "Year",
+      y = "Wage Rate ")
+
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### GDP
+```{r}
+renderDT({
+ 
+  Total_GDPrates %>% 
+  select(Period, States, Year,
+         'GDP in Dollars' = `GDP_in_all_the_industries`)
+
+    
+})
+
+```
+
+  
+### Estimate poverty rate
+```{r}
+
+Povertyrate %>%
+  gather(-EstimatePovertyrate, -State, -Period, key = "var", value = "Year") %>% 
+  ggplot(aes(x = Year, y = EstimatePovertyrate, color = EstimatePovertyrate, shape = factor(Period))) +
+    geom_point() +
+    facet_wrap(~ State, scales = "free") +
+    theme_bw() +
+  labs(
+      x= "Year",
+      y = "Poverty Rate in Dollars ")
+
+```
+     
+# Financial Impact
+
+
+####  {}
+<h2>Financial Impact</h2>
+Add your analysis / findings / Annotations here.
+
+## Column{data-width=200}
+### Select States, Period and Year
+
+```{r SelectState3}
+
+selectInput(
+	inputId = "StateSelected4",
+	label = "Please select the state",
+	choices = 
+		 Snap_Benefits %>% 
+		select(State) %>% 
+		unique()
+)
+
+```
+
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+### Expenditure sheet 
+```{r maps Post}
+us_map <- map_data('state')
+Expenditure <- PCE %>%
+#	filter(Period == "Recession") %>% 
+	group_by(State) %>% 
+	summarise(
+		MeanOwnership = mean(`Personal_Consumption_Expenditures`)
+	)
+
+#Convert to lower case.
+Expenditure$region <- gsub('_',' ',tolower(Expenditure$State))
+
+merged_data <- left_join(us_map, Expenditure[, c('region', 'MeanOwnership')], by='region')
+
+ 
+merged_data %>% 
+	ggplot()+
+	geom_polygon(aes(x=long, y=lat, group=group, fill=MeanOwnership))+
+	theme_void()+
+   labs(title = 'Personal Expenditure', 
+        subtitle = 'By state') +
+  labs(
+      x= "States",
+      y = "Total Expenditure ")
+
+```
+
+
+### Snap beneits of Receiptents
+```{r}
+renderPlotly({
+gdpPlot <-Snap_Benefits %>% 
+ # filter(State==input$stateHouseHold) %>%
+  ggplot( aes(x = Year, y= Snap_benefits,  shape=Period)) +
+  geom_point(aes(colour = Period), position = "Jitter")+facet_grid(rows= vars(State))+theme_light() +
+  labs(title = "SNAP Benefits",
+       subtitle = "Snap Benefits of Receiptents",
+       caption = "Resources: Fred & Geo Fred dataset")+
+ theme_bw(base_size=10)+
+  theme(legend.position="right",
+        plot.caption=element_text(hjust=0))+
+  theme(legend.title = element_text(size=rel(0.5)), legend.text=element_text(size=rel(0.5)), legend.key.size = unit(0.5,"line"),
+        axis.title.x = element_text(size = 8), axis.text.x = element_text(size = 5), axis.title.y = element_text(size = 6), axis.text.y = element_text(size=5),
+        plot.title = element_text(size = 8, face ="plain"),
+        plot.subtitle  = element_text(size = 8, face ="plain"),
+        plot.caption = element_text(size = 8, face ="plain"))
+ggplotly(gdpPlot)
+}) 
+
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Total Personal Income
+```{r}
+p <- ggplot(data = PersonalIncome_rates, aes(x =Year , y = Personal_Income, color = States)) + geom_point()
+p + facet_wrap(~Period, scales = "free") +
+  labs(
+      x= "Year",
+      y = "Personal Income in Dollars ")
+
+```
+
